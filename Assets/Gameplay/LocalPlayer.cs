@@ -23,6 +23,10 @@ public class LocalPlayer : MonoBehaviour, ICardPlayer {
 		return true;
 	}
 
+	public bool IsInPlay() {
+		return true;
+	}
+
 	public void OnRemove() {
 	}
 

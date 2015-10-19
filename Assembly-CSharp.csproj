@@ -49,6 +49,7 @@
      <Compile Include="Assets\Gameplay\CardManager.cs" />
      <Compile Include="Assets\Gameplay\CharacterCardBehavior.cs" />
      <Compile Include="Assets\Gameplay\EmptyPlayer.cs" />
+     <Compile Include="Assets\Gameplay\GameFlowControl.cs" />
      <Compile Include="Assets\Gameplay\ICardPlayer.cs" />
      <Compile Include="Assets\Gameplay\LocalPlayer.cs" />
      <Compile Include="Assets\Gameplay\MainGameState.cs" />

@@ -21,6 +21,10 @@ public class EmptyPlayer : MonoBehaviour, ICardPlayer {
 	public bool IsConnected() {
 		return true;
 	}
+
+	public bool IsInPlay() {
+		return false;
+	}
 	
 	public void OnRemove() {
 	}

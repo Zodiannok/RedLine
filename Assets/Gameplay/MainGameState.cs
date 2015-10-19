@@ -7,7 +7,7 @@ using System.Collections.Generic;
 public class MainGameState : MonoBehaviour {
 
 	// Which overall game state is the game in?
-	enum GameState {
+	internal enum GameState {
 		// Game is in setup phase.
 		SetupState,
 
@@ -22,11 +22,23 @@ public class MainGameState : MonoBehaviour {
 	}
 
 	// Which phase is the game in?
-	enum RoundPhase {
+	internal enum RoundPhase {
+		// Waiting for actual gameplay phase to start
 		LimboPhase,
+
+		// Weekday action choice.
 		ActionPhase,
+
+		// Weekday business, try to get customers.
 		BusinessPhase,
+
+		// Weekend shopping.
+		ShopPhase,
+
+		// Weekend recruit, fight over new recruits.
 		RecruitPhase,
+
+		// The very end of weekend. Roll random events.
 		EventPhase,
 	}
 
@@ -44,6 +56,9 @@ public class MainGameState : MonoBehaviour {
 	public int CustomersPerTurn { get; private set; }
 
 	public GameObject CardPrefab { get; set; }
+
+	internal GameState CurrentState { get { return _CurrentState; } }
+	internal RoundPhase CurrentPhase { get { return _CurrentPhase; } }
 
 	private bool _IsInGame;
 	private bool _IsHost;
@@ -234,14 +249,32 @@ public class MainGameState : MonoBehaviour {
 		_RelationMap.SetupInitialRelations (_CardManager, _CardDeck);
 
 		// Initialize players.
-		foreach (ICardPlayer player in _Players) {
-			player.GetPlayerStatus().Fund = StartingFund;
+		var playersInPlay = GetPlayersInPlay ();
+		foreach (int playerIndex in playersInPlay) {
+			_Players[playerIndex].GetPlayerStatus().Fund = StartingFund;
 		}
 
 		// Distribute cards to each player.
-		int totalCardDistributions = MaximumPlayers * InitialHandCards;
+		int totalCardDistributions = playersInPlay.Count * InitialHandCards;
 		if (totalCardDistributions > _CardInstances.Count) {
 			totalCardDistributions = _CardInstances.Count;
+		}
+		// Shuffle deck (Fisher-Yates).
+		List<int> deck = new List<int> ();
+		for (int i = 0; i < _CardInstances.Count; ++i) {
+			int j = Random.Range(0, i + 1);
+			if (j != i) {
+				deck.Add(deck[j]);
+				deck[j] = i;
+			} else {
+				deck.Add(i);
+			}
+		}
+		for (int i = 0; i < totalCardDistributions; ++i) {
+			int playerIndex = playersInPlay[i % playersInPlay.Count];
+			int cardIndex = deck[i];
+			_CardInstances[cardIndex].Owner = playerIndex;
+			_Players[playerIndex].GetPlayerStatus().AddCard(cardIndex);
 		}
 
 		return true;
@@ -272,9 +305,9 @@ public class MainGameState : MonoBehaviour {
 
 	#region Round Phase State Machine
 
-	// Enter action phase from limbo phase
+	// Enter action phase from limbo phase. Require weekdays.
 	public bool EnterRoundAction() {
-		if (_CurrentPhase != RoundPhase.LimboPhase) {
+		if (_CurrentPhase != RoundPhase.LimboPhase || !IsWeekday()) {
 			return false;
 		}
 
@@ -284,24 +317,48 @@ public class MainGameState : MonoBehaviour {
 		return true;
 	}
 
+	// Apply all actions selected by players.
+	public void ApplyActions() {
+		// TODO: Apply player selected actions.
+	}
+
 	// Enter business phase from action phase
 	public bool EnterRoundBusiness() {
 		if (_CurrentPhase != RoundPhase.ActionPhase) {
 			return false;
 		}
 
-		// End of action phase. Apply all actions.
-
 		// Randomly select customers.
-		_CurrentCustomerIndex = 0;
-		_CustomersList = new int[CustomersPerTurn];
-		// TODO: Implement random selection.
-		for (int i = 0; i < CustomersPerTurn; ++i) {
-			_CustomersList[i] = 0;
+		var customers = GetRandomUnassignedCustomers (CustomersPerTurn);
+		_CustomersList = new int[customers.Count];
+		for (int i = 0; i < customers.Count; ++i) {
+			_CustomersList[i] = customers[i];;
 		}
+		_CurrentCustomerIndex = 0;
 
 		_CurrentPhase = RoundPhase.BusinessPhase;
 		return true;
+	}
+
+	// Get the list of customers.
+	public IEnumerable<int> Customers {
+		get {
+			return _CustomersList;
+		}
+	}
+
+	// Get the index of current customer.
+	public int CurrentCustomerIndex {
+		get {
+			return _CurrentCustomerIndex;
+		}
+	}
+
+	// Query if there are more customers
+	public bool HasMoreCustomer {
+		get {
+			return _CurrentCustomerIndex < _CustomersList.Length;
+		}
 	}
 
 	// Query the current customer's card ID, or -1 if not applicable.
@@ -313,31 +370,76 @@ public class MainGameState : MonoBehaviour {
 		return _CustomersList [_CurrentCustomerIndex];
 	}
 
-	// Go to the next customer. Returns false if no more customer is available.
-	public bool NextCustomer() {
-		++_CurrentCustomerIndex;
-		return _CurrentCustomerIndex < CustomersPerTurn;
-	}
-
-	// Enter recruit phase from business phase.
-	// This occurs regardless of whether we can recruit or not. If we can't recruit this round, then this phase is immediately done (not skipped).
-	public bool EnterRoundRecruit() {
-		if (_CurrentPhase != RoundPhase.BusinessPhase) {
+	// Resolve the current customer and go to the next customer. Returns false if no more customer is available.
+	public bool ResolveCurrentCustomer() {
+		if (!HasMoreCustomer) {
 			return false;
 		}
 
-		if (CanRecruitThisRound ()) {
-			// Randomly select characters available for recruiting.
+		int currentCustomer = GetCurrentCustomer ();
+
+		int bestAppeal = -1;
+		int bestPlayer = -1;
+		int bestCard = -1;
+
+		foreach (int playerIndex in GetPlayersInPlay()) {
+			int playerCard = _Players[playerIndex].GetPlayerStatus().GetAgentAssignedForNextCustomer();
+			if (playerCard != -1) {
+				// Validate that the card can actually be picked.
+				var card = GetCardFromId(playerCard);
+				if (!card || card.Exhausted) {
+					continue;
+				}
+
+				// Evaluate the appeal of the agent card to the customer.
+				int cardAppeal = EvaluateAppeal(currentCustomer, playerCard);
+				if (cardAppeal > bestAppeal) {
+					bestAppeal = cardAppeal;
+					bestPlayer = playerIndex;
+					bestCard = playerCard;
+				}
+			}
+		}
+
+		// The customer goes to the best player (if there is one).
+		// Reward the player.
+		if (bestPlayer != -1) {
+			// Use (exhaust) the card picked.
+			var card = GetCardFromId(bestCard);
+			if (card) {
+				card.Exhausted = true;
+			}
+
+			// TODO: reward the player.
+		}
+
+		++_CurrentCustomerIndex;
+		return HasMoreCustomer;
+	}
+
+	// Enter shop phase from limbo. Require weekends.
+	public bool EnterRoundShop() {
+		if (_CurrentPhase != RoundPhase.LimboPhase || IsWeekday()) {
+			return false;
+		}
+
+		_CurrentPhase = RoundPhase.ShopPhase;
+		return true;
+	}
+
+	// Enter recruit phase from shopping phase.
+	public bool EnterRoundRecruit() {
+		if (_CurrentPhase != RoundPhase.ShopPhase) {
+			return false;
 		}
 
 		_CurrentPhase = RoundPhase.RecruitPhase;
 		return true;
 	}
 
-	// Check if we can recruit this round.
-	// For now, we can recruit every 30 days.
-	public bool CanRecruitThisRound() {
-		return CurrentRound % 30 == 0;
+	// Finalize recruiting.
+	public void FinalizeRecruiting() {
+		// Give the current recruit to the player with highest influence.
 	}
 
 	// Enter event phase from recruit phase.
@@ -346,20 +448,27 @@ public class MainGameState : MonoBehaviour {
 			return false;
 		}
 
-		// Finalize recruiting.
-		if (CanRecruitThisRound ()) {
-		}
-
 		// Pick random event for each player.
 
 		_CurrentPhase = RoundPhase.EventPhase;
 		return true;
 	}
 
+	// Resolve events.
+	public void ResolveRoundEvents() {
+	}
+
 	// Next turn. Enter limbo phase and increment round counter.
 	public bool NextRound() {
-		if (_CurrentPhase != RoundPhase.EventPhase) {
-			return false;
+		// Needs business phase on weekdays and event phase on weekends.
+		if (IsWeekday ()) {
+			if (_CurrentPhase != RoundPhase.BusinessPhase) {
+				return false;
+			}
+		} else { 
+			if (_CurrentPhase != RoundPhase.EventPhase) {
+				return false;
+			}
 		}
 
 		// Increment round counter.
@@ -368,6 +477,9 @@ public class MainGameState : MonoBehaviour {
 			// We are done with the game!
 			_IsInGame = false;
 		}
+
+		// Reset exhaust state of all player cards.
+		RefreshExhaustState ();
 
 		// Enters the next limbo.
 		_CurrentPhase = RoundPhase.LimboPhase;
@@ -378,6 +490,11 @@ public class MainGameState : MonoBehaviour {
 
 	#region Queries
 
+	// Check if today is a weekday (day % 7)
+	public bool IsWeekday() {
+		return CurrentRound % 7 == 0;
+	}
+
 	public CharacterCardBehavior GetCardFromId(int cardId) {
 		if (cardId < 0 || cardId >= _CardInstances.Count) {
 			return null;
@@ -385,9 +502,122 @@ public class MainGameState : MonoBehaviour {
 		return _CardInstances [cardId];
 	}
 
+	// In the following sections, "unassigned" means cards that are not owned by a player.
+
+	// Return the cardID of a random unassigned agent
+	// Return -1 if no agents are unassigned.
+	public int GetRandomUnassignedAgent() {
+		var agents = GetRandomUnassignedAgents (1);
+		foreach (int a in agents) {
+			return a;
+		}
+		return -1;
+	}
+
+	// Return a list of N random unassigned agents.
+	public IList<int> GetRandomUnassignedAgents(int count) {
+		var freeAgents = GetAllUnassignedAgents () as List<int>;
+		// Randomly shuffle and take the first *count numbers.
+		InplaceShuffle (freeAgents);
+		if (count < freeAgents.Count) {
+			freeAgents.RemoveRange (count, freeAgents.Count);
+		}
+		return freeAgents;
+	}
+
+	public IList<int> GetAllUnassignedAgents() {
+		// Get all free agents.
+		List<int> freeAgents = new List<int> ();
+		for (int i = 0; i < _CardInstances.Count; ++i) {
+			if (_CardInstances[i].Owner == -1)
+			{
+				long type = _CardInstances[i].CardType;
+				if (_CardManager.GetCardBaseData(type).IsAgent) {
+					freeAgents.Add(i);
+				}
+			}
+		}
+		return freeAgents;
+	}
+
+	// Return the cardID of a random unassigned customer
+	// Return -1 if no customers are unassigned.
+	public int GetRandomUnassignedCustomer() {
+		var customers = GetRandomUnassignedCustomers (1);
+		foreach (int c in customers) {
+			return c;
+		}
+		return -1;
+	}
+
+	// Return a list of N random unassigned customers.
+	public IList<int> GetRandomUnassignedCustomers(int count) {
+		var customers = GetAllUnassignedCustomers () as List<int>;
+		// Randomly shuffle and take the first *count numbers.
+		InplaceShuffle (customers);
+		if (count < customers.Count) {
+			customers.RemoveRange (count, customers.Count);
+		}
+		return customers;
+	}
+	
+	public IList<int> GetAllUnassignedCustomers() {
+		// Get all free agents.
+		List<int> customers = new List<int> ();
+		for (int i = 0; i < _CardInstances.Count; ++i) {
+			if (_CardInstances[i].Owner == -1)
+			{
+				long type = _CardInstances[i].CardType;
+				if (_CardManager.GetCardBaseData(type).IsCustomer) {
+					customers.Add(i);
+				}
+			}
+		}
+		return customers;
+	}
+
+	// Get the player indices that are in play.
+	// This is used to skip empty players.
+	// To get the players that are still alive, use GetPlayersAlive() instead.
+	public IList<int> GetPlayersInPlay() {
+		List<int> players = new List<int> ();
+		for (int i = 0; i < _Players.Length; ++i) {
+			if (_Players[i].IsInPlay()) {
+				players.Add(i);
+			}
+		}
+		return players;
+	}
+
 	#endregion
 
 	#region Game Operations
+	
+	public static void InplaceShuffle<T>(IList<T> list) {
+		// In-place shuffle with Fisher-Yates.
+		for (int i = 0; i < list.Count; ++i) {
+			int j = Random.Range(0, i + 1);
+			if (i != j) {
+				T source = list[i];
+				list[i] = list[j];
+				list[j] = source;
+			}
+		}
+	}
+
+	public int EvaluateAppeal(int customerCardID, int agentCardID) {
+		// TODO: Evaluate appeal value.
+		return 100;
+	}
+
+	// Reset all player cards' exhaust state to false, allowing them to be picked again.
+	public void RefreshExhaustState() {
+		foreach (CharacterCardBehavior card in _CardInstances) {
+			if (card.Owner != -1) {
+				card.Exhausted = false;
+			}
+		}
+	}
 
 	#endregion
 }

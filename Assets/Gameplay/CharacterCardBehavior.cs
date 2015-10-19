@@ -8,40 +8,43 @@ public class CharacterCardBehavior : MonoBehaviour {
 
 	// ID of this card in this game.
 	// A card will be assigned an ID when it's created.
-	public int CardID { get; private set; }
+	public int CardID { get; internal set; }
 
 	// A 64-bit int designating the card's type.
 	// Call CardManager.GetCardBaseData(CardType) to get this card's base data.
-	public long CardType { get; private set; }
+	public long CardType { get; internal set; }
 
 	// Player index that currently owns the card.
 	// A -1 index means that the card is currently free.
-	public int Owner { get; private set; }
+	public int Owner { get; internal set; }
 
 	// Current HP
-	public int CurrentHP { get; private set; }
+	public int CurrentHP { get; internal set; }
 
 	// Max HP
-	public int MaxHP { get; private set; }
+	public int MaxHP { get; internal set; }
 
 	// Character stats
-	public int[] CharacterStats { get; private set; }
+	public int[] CharacterStats { get; internal set; }
 
 	// Primary attribute values
-	public int[] PrimaryAttributes { get; private set; }
+	public int[] PrimaryAttributes { get; internal set; }
 
 	// Special abilities (ID)
-	public int[] SpecialAbilities { get; private set; }
+	public int[] SpecialAbilities { get; internal set; }
 
 	// TODO: Add card visual so that the UI can draw this card
 	// public Texture Portrait
-	public string Name { get; private set; }
+	public string Name { get; internal set; }
 
 	// Activity log.
-	public List<string> ActivityLog { get; private set; }
+	public List<string> ActivityLog { get; internal set; }
 
 	// TODO: Item slot
 	// public Item
+
+	// Whether the card is exhausted (can't be used again) in this round.
+	public bool Exhausted { get; internal set; }
 
 	// Stores the card manager for easier future references.
 	private CardManager _CardManagerRef;
@@ -83,6 +86,8 @@ public class CharacterCardBehavior : MonoBehaviour {
 		}
 
 		Owner = -1;
+		Exhausted = false;
 		ActivityLog.Clear ();
 	}
+
 }

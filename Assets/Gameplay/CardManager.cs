@@ -37,7 +37,7 @@ public struct CardBaseData {
 	// public Texture Portrait
 	public string Name;
 
-	// Card data as player character.
+	// Card data as player agent.
 	public int InitialHP;
 	public int MaxHP;
 	public int [] CharacterStats;
@@ -45,7 +45,13 @@ public struct CardBaseData {
 	public int [] SpecialAbilities;
 
 	// Card data as customer.
-	public int Bounty;
+	public int Payment;
+
+	// Can this card show up as a player-side agent?
+	public bool IsAgent;
+
+	// Can this card show up as a customer?
+	public bool IsCustomer;
 
 	// Base relationship.
 	public RelationBaseData [] Relations;

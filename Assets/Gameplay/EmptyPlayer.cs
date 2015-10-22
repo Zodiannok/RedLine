@@ -6,9 +6,14 @@ public class EmptyPlayer : MonoBehaviour, ICardPlayer {
 
 	private PlayerStatus _PlayerStatus;
 
+	// Object construction
+	void Awake () {
+		_PlayerStatus = new PlayerStatus ();
+	}
+	
 	// Use this for initialization
 	void Start () {
-		_PlayerStatus = new PlayerStatus ();
+
 	}
 	
 	// Update is called once per frame
@@ -17,6 +22,10 @@ public class EmptyPlayer : MonoBehaviour, ICardPlayer {
 	}
 
 	#region ICardPlayer Implementation
+
+	public string GetDisplayName() {
+		return "Empty";
+	}
 	
 	public bool IsConnected() {
 		return true;

@@ -48,18 +48,21 @@ public class MainGameState : MonoBehaviour {
 	// By default we have a year (365 rounds). Each round contains multiple phases as defined in RoundPhase enum.
 	// Round number is 1-based and inclusive for the sake of sanity - we have round 1 to round 365.
 	public int CurrentRound { get; private set; }
-	public int MaximumRound { get; private set; }
+	public int MaximumRound = 365;
 
-	public int CardDeckSizeLimit { get; private set; }
-	public int InitialHandCards { get; private set; }
-	public int StartingFund { get; private set; }
-	public int CustomersPerTurn { get; private set; }
+	// Game options.
+	public int CardDeckSizeLimit = 64;
+	public int InitialHandCards = 3;
+	public int StartingFund = 10000;
+	public int CustomersPerTurn = 3;
 
-	public GameObject CardPrefab { get; set; }
+	// Card object to instantiate.
+	public GameObject CardPrefab;
 
 	internal GameState CurrentState { get { return _CurrentState; } }
 	internal RoundPhase CurrentPhase { get { return _CurrentPhase; } }
 
+	private bool _InitialDataLoaded;
 	private bool _IsInGame;
 	private bool _IsHost;
 	private GameState _CurrentState;
@@ -81,12 +84,8 @@ public class MainGameState : MonoBehaviour {
 	// Use this for initialization
 	void Start () {
 		CurrentRound = 1;
-		MaximumRound = 365;
-		CardDeckSizeLimit = 64;
-		InitialHandCards = 3;
-		StartingFund = 10000;
-		CustomersPerTurn = 3;
 
+		_InitialDataLoaded = false;
 		_IsInGame = false;
 		_IsHost = true;
 		_CurrentState = GameState.ShutdownState;
@@ -95,7 +94,6 @@ public class MainGameState : MonoBehaviour {
 		_RelationMap = GetComponent<RelationMap> ();
 		_Players = new ICardPlayer[MaximumPlayers];
 
-		LoadInitialData ();
 	}
 	
 	// Update is called once per frame
@@ -109,6 +107,8 @@ public class MainGameState : MonoBehaviour {
 		
 		// TODO: Get the list of cards and load all.
 		_CardManager.LoadCard ("CureWhite.png");
+
+		_InitialDataLoaded = true;
 	}
 
 	#region Game State Machine
@@ -117,6 +117,10 @@ public class MainGameState : MonoBehaviour {
 	public bool EnterSetup() {
 		if (_CurrentState != GameState.ShutdownState) {
 			return false;
+		}
+
+		if (!_InitialDataLoaded) {
+			LoadInitialData ();
 		}
 
 		_CardDeck = new List<long> ();
@@ -144,18 +148,12 @@ public class MainGameState : MonoBehaviour {
 			_Players [i] = null;
 		}
 
-		// TODO: Wait for the game to add players (especially remote players).
-		AddLocalPlayer (0);
-		AddEmptyPlayer (1);
-		AddEmptyPlayer (2);
-		AddEmptyPlayer (3);
-
 		_CurrentState = GameState.ConnectionState;
 		return true;
 	}
 
 	// Add a local player to a player slot.
-	public bool AddLocalPlayer(int playerSlot) {
+	public bool AddLocalPlayer(int playerSlot, string playerName) {
 		// Out of bound check
 		if (playerSlot < 0 || playerSlot >= MaximumPlayers) {
 			return false;
@@ -167,6 +165,7 @@ public class MainGameState : MonoBehaviour {
 		}
 
 		LocalPlayer player = gameObject.AddComponent<LocalPlayer>();
+		player.PlayerName = playerName;
 		_Players [playerSlot] = player;
 		player.GetPlayerStatus ().PlayerIndex = playerSlot;
 		
@@ -228,7 +227,7 @@ public class MainGameState : MonoBehaviour {
 		_CurrentState = GameState.PlayState;
 
 		// Initialize game state machine.
-		CurrentRound = 0;
+		CurrentRound = 1;
 		MaximumRound = 365;
 		_CurrentPhase = RoundPhase.LimboPhase;
 		_IsInGame = true;
@@ -341,7 +340,7 @@ public class MainGameState : MonoBehaviour {
 	}
 
 	// Get the list of customers.
-	public IEnumerable<int> Customers {
+	public IList<int> Customers {
 		get {
 			return _CustomersList;
 		}
@@ -490,9 +489,9 @@ public class MainGameState : MonoBehaviour {
 
 	#region Queries
 
-	// Check if today is a weekday (day % 7)
+	// Check if today is a weekday (day % 7 is not 0)
 	public bool IsWeekday() {
-		return CurrentRound % 7 == 0;
+		return CurrentRound % 7 != 0;
 	}
 
 	public CharacterCardBehavior GetCardFromId(int cardId) {

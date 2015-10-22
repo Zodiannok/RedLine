@@ -29,11 +29,13 @@ public class RelationMap : MonoBehaviour {
 				continue;
 			}
 
-			foreach (RelationBaseData relation in data.Relations) {
-				var otherCards = manager.FindCardsWithName(relation.OtherName);
-				foreach (CardBaseData otherCardData in otherCards) {
-					// Can be optimized (doesn't need to do fromCard lookup every time), but oh well.
-					ApplyRelationshipChange(data.CardType, otherCardData.CardType, relation.Relationship);
+			if (data.Relations != null) {
+				foreach (RelationBaseData relation in data.Relations) {
+					var otherCards = manager.FindCardsWithName(relation.OtherName);
+					foreach (CardBaseData otherCardData in otherCards) {
+						// Can be optimized (doesn't need to do fromCard lookup every time), but oh well.
+						ApplyRelationshipChange(data.CardType, otherCardData.CardType, relation.Relationship);
+					}
 				}
 			}
 		}

@@ -9,16 +9,16 @@ public class GameFlowControl : MonoBehaviour {
 	public bool Paused { get; set; }
 
 	// Player timer for each phase.
-	public float ActionPhaseTimer { get; private set; }
-	public float BusinessPhaseTimer { get; private set; }
-	public float ShopPhaseTimer { get; private set; }
-	public float RecruitPhaseTimer { get; private set; }
+	public float ActionPhaseTimer = 120.0f;
+	public float BusinessPhaseTimer = 60.0f;
+	public float ShopPhaseTimer = 120.0f;
+	public float RecruitPhaseTimer = 60.0f;
 
 	// "Rest" timer between two rounds. Can also be prolonged by displaying events.
-	public float RoundRestTimer { get; private set; }
+	public float RoundRestTimer = 15.0f;
 
 	// "Rest" timer between phase changes. Can be used to display short UI notices.
-	public float MinorRestTimer { get; private set; }
+	public float MinorRestTimer = 3.0f;
 
 	private MainGameState _MainGameState;
 
@@ -51,13 +51,6 @@ public class GameFlowControl : MonoBehaviour {
 
 	// Use this for initialization
 	void Start () {
-		ActionPhaseTimer = 120.0f;
-		BusinessPhaseTimer = 60.0f;
-		ShopPhaseTimer = 120.0f;
-		RecruitPhaseTimer = 60.0f;
-		RoundRestTimer = 15.0f;
-		MinorRestTimer = 3.0f;
-
 		_MainGameState = GetComponent<MainGameState> ();
 		_InternalPhase = GameFlowPhase.EndPhase;
 	}
@@ -77,6 +70,32 @@ public class GameFlowControl : MonoBehaviour {
 			if (_CurrentPhaseTimerCountDown <= 0.0f) {
 				TriggerNextPhase();
 			}
+		}
+	}
+
+	public bool IsInGame {
+		get {
+			return _InternalPhase != GameFlowPhase.EndPhase;
+		}
+	}
+
+	public bool IsInRestPhase {
+		get {
+			return _InternalPhase == GameFlowPhase.RoundRest || _InternalPhase == GameFlowPhase.MinorRest;
+		}
+	}
+
+	public float CurrentPhaseMaxTime { get; private set; }
+
+	public float CurrentCountDown {
+		get {
+			return _CurrentPhaseTimerCountDown;
+		}
+	}
+
+	public float CurrentTimer {
+		get {
+			return CurrentPhaseMaxTime - _CurrentPhaseTimerCountDown;
 		}
 	}
 
@@ -104,8 +123,8 @@ public class GameFlowControl : MonoBehaviour {
 		}
 	}
 
-	public void InitializeGameFlow() {
-		if (!_MainGameState.EnterPlay ()) {
+	public void StartGameFlow() {
+		if (_MainGameState.CurrentState != MainGameState.GameState.PlayState) {
 			return;
 		}
 		SetPhaseTimer (GameFlowPhase.RoundRest);
@@ -114,27 +133,28 @@ public class GameFlowControl : MonoBehaviour {
 	void SetPhaseTimer(GameFlowPhase phase) {
 		switch (phase) {
 		case GameFlowPhase.RoundRest:
-			_CurrentPhaseTimerCountDown = RoundRestTimer;
+			_CurrentPhaseTimerCountDown = CurrentPhaseMaxTime = RoundRestTimer;
 			break;
 		case GameFlowPhase.MinorRest:
-			_CurrentPhaseTimerCountDown = MinorRestTimer;
+			_CurrentPhaseTimerCountDown = CurrentPhaseMaxTime = MinorRestTimer;
 			break;
 		case GameFlowPhase.ActionPhase:
-			_CurrentPhaseTimerCountDown = ActionPhaseTimer;
+			_CurrentPhaseTimerCountDown = CurrentPhaseMaxTime = ActionPhaseTimer;
 			break;
 		case GameFlowPhase.BusinessPhase:
-			_CurrentPhaseTimerCountDown = BusinessPhaseTimer;
+			_CurrentPhaseTimerCountDown = CurrentPhaseMaxTime = BusinessPhaseTimer;
 			break;
 		case GameFlowPhase.ShopPhase:
-			_CurrentPhaseTimerCountDown = ShopPhaseTimer;
+			_CurrentPhaseTimerCountDown = CurrentPhaseMaxTime = ShopPhaseTimer;
 			break;
 		case GameFlowPhase.RecruitPhase:
-			_CurrentPhaseTimerCountDown = RecruitPhaseTimer;
+			_CurrentPhaseTimerCountDown = CurrentPhaseMaxTime = RecruitPhaseTimer;
 			break;
 		case GameFlowPhase.EndPhase:
 			_CurrentPhaseTimerCountDown = 0.0f;
 			break;
 		}
+		_InternalPhase = phase;
 	}
 
 	void AdvanceToNextRound() {

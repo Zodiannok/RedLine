@@ -5,11 +5,18 @@ using System.Collections;
 // There should usually be only one local player.
 public class LocalPlayer : MonoBehaviour, ICardPlayer {
 
+	public string PlayerName;
+
 	private PlayerStatus _PlayerStatus;
+
+	// Object construction
+	void Awake () {
+		_PlayerStatus = new PlayerStatus ();
+	}
 
 	// Use this for initialization
 	void Start () {
-		_PlayerStatus = new PlayerStatus ();
+
 	}
 	
 	// Update is called once per frame
@@ -18,6 +25,10 @@ public class LocalPlayer : MonoBehaviour, ICardPlayer {
 	}
 
 	#region ICardPlayer Implementation
+
+	public string GetDisplayName() {
+		return PlayerName;
+	}
 
 	public bool IsConnected() {
 		return true;

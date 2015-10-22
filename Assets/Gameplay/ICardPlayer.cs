@@ -2,6 +2,9 @@
 using System.Collections;
 
 public interface ICardPlayer {
+	// Get the display name of the player.
+	string GetDisplayName();
+	
 	// Check if the player is connected.
 	bool IsConnected();
 

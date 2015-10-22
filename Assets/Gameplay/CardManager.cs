@@ -82,12 +82,12 @@ public class CardManager : MonoBehaviour {
 	// Load attribute and ability data
 	public bool LoadAttributeAbilityData() {
 		// TODO: add new attributes and abilities here.
-		AttributeData attrData;
+		AttributeData attrData = new AttributeData();
 		attrData.Name = "属性1";
 
 		_Attributes [0] = attrData;
 
-		AbilityData abData;
+		AbilityData abData = new AbilityData();
 		abData.Name = "技能1";
 
 		_Abilities [0] = abData;

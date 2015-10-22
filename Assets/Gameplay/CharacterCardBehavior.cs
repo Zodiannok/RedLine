@@ -49,11 +49,17 @@ public class CharacterCardBehavior : MonoBehaviour {
 	// Stores the card manager for easier future references.
 	private CardManager _CardManagerRef;
 
-	// Use this for initialization
-	void Start () {
+	// Object construction
+	void Awake () {
+		CharacterStats = new int[CardBaseData.NumCharacterStats];
 		PrimaryAttributes = new int[CardBaseData.NumPrimaryAttributes];
 		SpecialAbilities = new int[CardBaseData.NumSpecialAbilities];
 		ActivityLog = new List<string> ();
+	}
+
+	// Use this for initialization
+	void Start () {
+
 	}
 	
 	// Update is called once per frame

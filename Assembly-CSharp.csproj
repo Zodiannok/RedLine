@@ -46,6 +46,7 @@
 	</Reference>
   </ItemGroup>
   <ItemGroup>
+     <Compile Include="Assets\GameView\TestView.cs" />
      <Compile Include="Assets\Gameplay\CardManager.cs" />
      <Compile Include="Assets\Gameplay\CharacterCardBehavior.cs" />
      <Compile Include="Assets\Gameplay\EmptyPlayer.cs" />

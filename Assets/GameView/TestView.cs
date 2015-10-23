@@ -13,7 +13,7 @@ public class TestView : MonoBehaviour {
 	// Use this for initialization
 	void Start () {
 		_GameState = GamePlayObj.GetComponent<MainGameState> ();
-		_GameFlow = GamePlayObj.GetComponent<GameFlowControl> ();
+		_GameFlow = GetComponent<GameFlowControl> ();
 		_Canvas = transform.FindChild ("MenuCanvas");
 
 		Transform debugView = _Canvas.FindChild ("DebugView");

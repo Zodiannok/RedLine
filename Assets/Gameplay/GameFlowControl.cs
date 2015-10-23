@@ -8,6 +8,8 @@ public class GameFlowControl : MonoBehaviour {
 	// Pause/unpause the game
 	public bool Paused { get; set; }
 
+	public GameObject GameStateObject;
+
 	// Player timer for each phase.
 	public float ActionPhaseTimer = 120.0f;
 	public float BusinessPhaseTimer = 60.0f;
@@ -51,7 +53,7 @@ public class GameFlowControl : MonoBehaviour {
 
 	// Use this for initialization
 	void Start () {
-		_MainGameState = GetComponent<MainGameState> ();
+		_MainGameState = GameStateObject.GetComponent<MainGameState> ();
 		_InternalPhase = GameFlowPhase.EndPhase;
 	}
 	

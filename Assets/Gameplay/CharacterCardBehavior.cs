@@ -35,7 +35,7 @@ public class CharacterCardBehavior : MonoBehaviour {
 
 	// TODO: Add card visual so that the UI can draw this card
 	// public Texture Portrait
-	public string Name { get; internal set; }
+	public string CardName { get; internal set; }
 
 	// Activity log.
 	public List<string> ActivityLog { get; internal set; }
@@ -88,7 +88,7 @@ public class CharacterCardBehavior : MonoBehaviour {
 				SpecialAbilities[i] = data.SpecialAbilities[i];
 			}
 			// Portrait = data.Portrait;
-			Name = data.Name;
+			CardName = data.Name;
 		}
 
 		Owner = -1;
@@ -96,4 +96,8 @@ public class CharacterCardBehavior : MonoBehaviour {
 		ActivityLog.Clear ();
 	}
 
+	// Converts a stat value (integer) to a letter grade (SABCDE)
+	static public string StatLetterGrade(int statValue) {
+		return "A";
+	}
 }

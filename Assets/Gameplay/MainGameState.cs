@@ -104,10 +104,6 @@ public class MainGameState : MonoBehaviour {
 	void LoadInitialData() {
 		// Initialize game data.
 		_CardManager.LoadAttributeAbilityData ();
-		
-		// TODO: Get the list of cards and load all.
-		_CardManager.LoadCard ("CureWhite.png");
-
 		_InitialDataLoaded = true;
 	}
 
@@ -519,9 +515,10 @@ public class MainGameState : MonoBehaviour {
 		// Randomly shuffle and take the first *count numbers.
 		InplaceShuffle (freeAgents);
 		if (count < freeAgents.Count) {
-			freeAgents.RemoveRange (count, freeAgents.Count);
+			return freeAgents.GetRange(0, count);
+		} else {
+			return freeAgents;
 		}
-		return freeAgents;
 	}
 
 	public IList<int> GetAllUnassignedAgents() {
@@ -555,9 +552,10 @@ public class MainGameState : MonoBehaviour {
 		// Randomly shuffle and take the first *count numbers.
 		InplaceShuffle (customers);
 		if (count < customers.Count) {
-			customers.RemoveRange (count, customers.Count);
+			return customers.GetRange(0, count);
+		} else {
+			return customers;
 		}
-		return customers;
 	}
 	
 	public IList<int> GetAllUnassignedCustomers() {
@@ -586,6 +584,16 @@ public class MainGameState : MonoBehaviour {
 			}
 		}
 		return players;
+	}
+
+	// Get the player in the specified slot.
+	// If the player is not in game, return null too.
+	public ICardPlayer GetPlayerInPlay(int playerIndex) {
+		ICardPlayer cardPlayer = _Players[playerIndex];
+		if (cardPlayer != null && cardPlayer.IsInPlay ()) {
+			return cardPlayer;
+		}
+		return null;
 	}
 
 	#endregion

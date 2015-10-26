@@ -10,11 +10,17 @@ public class TestView : MonoBehaviour {
 	private GameFlowControl _GameFlow;
 	private Transform _Canvas;
 
+	private CardManager _CardManager;
+	private PlaceholderLibrary _PlaceholderLibrary;
+
 	// Use this for initialization
 	void Start () {
 		_GameState = GamePlayObj.GetComponent<MainGameState> ();
 		_GameFlow = GetComponent<GameFlowControl> ();
 		_Canvas = transform.FindChild ("MenuCanvas");
+
+		_CardManager = GamePlayObj.GetComponent<CardManager> ();
+		_PlaceholderLibrary = gameObject.AddComponent<PlaceholderLibrary> ();
 
 		Transform debugView = _Canvas.FindChild ("DebugView");
 		Debug.Assert (debugView);
@@ -61,6 +67,8 @@ public class TestView : MonoBehaviour {
 
 	public void OnButtonClicked_StartGame() {
 		Debug.Assert (_GameState.CurrentState == MainGameState.GameState.ShutdownState);
+
+		_PlaceholderLibrary.LoadCards (_CardManager);
 
 		_GameState.EnterSetup ();
 

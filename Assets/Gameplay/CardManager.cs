@@ -55,6 +55,13 @@ public struct CardBaseData {
 
 	// Base relationship.
 	public RelationBaseData [] Relations;
+
+	static public long Hash(string str) {
+		// Use a simple method from StackOverflow to get a 64-bit hash.
+		string s1 = str.Substring(0, str.Length / 2);
+		string s2 = str.Substring(str.Length / 2);
+		return (((long)s1.GetHashCode()) << 0x20) | (long)s2.GetHashCode();
+	}
 }
 
 // Attach this to the root to manage all cards in the game.
@@ -100,10 +107,7 @@ public class CardManager : MonoBehaviour {
 		// TODO: use file content to calculate hash.
 		long cardHash = 0;
 		if (fileName.Length != 0) {
-			// Use a simple method from StackOverflow to get a 64-bit hash.
-			string s1 = fileName.Substring(0, fileName.Length / 2);
-			string s2 = fileName.Substring(fileName.Length / 2);
-			cardHash = (((long)s1.GetHashCode()) << 0x20) | (long)s2.GetHashCode();
+			cardHash = CardBaseData.Hash(fileName);
 		}
 
 		// TODO: Actually load data from file.
@@ -115,6 +119,18 @@ public class CardManager : MonoBehaviour {
 		data.SpecialAbilities = new int[CardBaseData.NumSpecialAbilities];
 
 		_Cards [cardHash] = data;
+		return true;
+	}
+
+	// Load method that directly feeds card data.
+	public bool LoadCard(CardBaseData cardData) {
+		if (_Cards.ContainsKey (cardData.CardType)) {
+			// Card is already loaded!
+			return false;
+		}
+
+		// Set card data.
+		_Cards [cardData.CardType] = cardData;
 		return true;
 	}
 

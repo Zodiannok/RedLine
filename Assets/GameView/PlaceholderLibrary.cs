@@ -42,6 +42,9 @@ public class PlaceholderLibrary : MonoBehaviour {
 		result.Name = string.Format ("Dummy Card {0}", index + 1);
 		result.CardType = CardBaseData.Hash (result.Name);
 		result.CharacterStats = new int[CardBaseData.NumCharacterStats];
+		for (int i = 0; i < CardBaseData.NumCharacterStats; ++i) {
+			result.CharacterStats[i] = Random.Range(0, 1000);
+		}
 		result.PrimaryAttributes = new int[CardBaseData.NumPrimaryAttributes];
 		result.SpecialAbilities = new int[CardBaseData.NumSpecialAbilities];
 

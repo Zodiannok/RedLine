@@ -175,9 +175,11 @@ public class GameFlowControl : MonoBehaviour {
 		if (_MainGameState.IsWeekday ()) {
 			_MainGameState.EnterRoundAction ();
 			SetPhaseTimer (GameFlowPhase.ActionPhase);
+			BroadcastMessage("OnEnterAction");
 		} else {
 			_MainGameState.EnterRoundShop ();
 			SetPhaseTimer (GameFlowPhase.ShopPhase);
+			BroadcastMessage("OnEnterShop");
 		}
 	}
 
@@ -190,21 +192,25 @@ public class GameFlowControl : MonoBehaviour {
 			// This is when action phase transits into business phase.
 			_MainGameState.EnterRoundBusiness();
 			SetPhaseTimer(GameFlowPhase.BusinessPhase);
+			BroadcastMessage("OnEnterBusiness");
 			break;
 		case MainGameState.RoundPhase.BusinessPhase:
 			// This is the pause between different customers.
 			// Check if we have the next one. If so, start timer for the next customer. Otherwise go to next round.
 			if (_MainGameState.HasMoreCustomer) {
 				SetPhaseTimer(GameFlowPhase.BusinessPhase);
+				BroadcastMessage("OnEnterBusiness");
 			} else {
 				_MainGameState.NextRound();
 				SetPhaseTimer(GameFlowPhase.RoundRest);
+				BroadcastMessage("OnNextRound");
 			}
 			break;
 		case MainGameState.RoundPhase.ShopPhase:
 			// This is when shop phase transits into recruit phase.
 			_MainGameState.EnterRoundRecruit();
 			SetPhaseTimer(GameFlowPhase.RecruitPhase);
+			BroadcastMessage("OnEnterRecruit");
 			break;
 		case MainGameState.RoundPhase.RecruitPhase:
 			// This is the pause between different recruits.
@@ -213,6 +219,7 @@ public class GameFlowControl : MonoBehaviour {
 			_MainGameState.ResolveRoundEvents();
 			_MainGameState.NextRound();
 			SetPhaseTimer(GameFlowPhase.RoundRest);
+			BroadcastMessage("OnNextRound");
 			break;
 		}
 	}
@@ -223,6 +230,8 @@ public class GameFlowControl : MonoBehaviour {
 
 		// Give the players a short time (for the UI to update them with information)
 		SetPhaseTimer (GameFlowPhase.MinorRest);
+
+		BroadcastMessage("OnLeaveAction");
 	}
 
 	void HandleBusinessDone() {
@@ -231,6 +240,8 @@ public class GameFlowControl : MonoBehaviour {
 
 		// Give the players a short time (for UI update and prepare them for the next customer)
 		SetPhaseTimer (GameFlowPhase.MinorRest);
+
+		BroadcastMessage("OnLeaveBusiness");
 	}
 
 	void HandleShopDone() {
@@ -238,6 +249,8 @@ public class GameFlowControl : MonoBehaviour {
 
 		// Give the players a short time for UI update.
 		SetPhaseTimer (GameFlowPhase.MinorRest);
+
+		BroadcastMessage("OnLeaveShop");
 	}
 
 	void HandleRecruitDone() {
@@ -245,5 +258,7 @@ public class GameFlowControl : MonoBehaviour {
 
 		// Give the players a short time (for UI update and prepare them for the next recruit)
 		SetPhaseTimer (GameFlowPhase.MinorRest);
+
+		BroadcastMessage("OnLeaveRecruit");
 	}
 }

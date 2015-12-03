@@ -122,4 +122,7 @@ public class TestView : MonoBehaviour {
 			buttonText.GetComponent<Text> ().text = "Unpause";
 		}
 	}
+
+	void OnEnterAction() {
+	}
 }

@@ -97,7 +97,15 @@ public class CharacterCardBehavior : MonoBehaviour {
 	}
 
 	// Converts a stat value (integer) to a letter grade (SABCDE)
+	static readonly int[] GradeThresholdValue = { 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000 };
+	static readonly string[] GradeThresholdLetter = { "F", "E", "D", "C", "B", "A", "A+", "S", "S+", "S++" };
+
 	static public string StatLetterGrade(int statValue) {
-		return "A";
+		for (int i = 0; i < GradeThresholdValue.Length; ++i) {
+			if (statValue < GradeThresholdValue[i]) {
+				return GradeThresholdLetter[i];
+			}
+		}
+		return GradeThresholdLetter[GradeThresholdLetter.Length - 1];
 	}
 }
